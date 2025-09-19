@@ -1,19 +1,16 @@
-name: Auto M3U AllDebrid
+name: AutoDebrid
 
 on:
-  schedule:
-    - cron: "0 6 * * *"   # Tous les jours à 6h du matin (UTC) → 8h en France
-  workflow_dispatch:       # Permet de lancer manuellement aussi
+  workflow_dispatch:   # Lancement manuel depuis GitHub Actions
 
 jobs:
-  build:
+  run:
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout repo
+      - name: Checkout repository
         uses: actions/checkout@v3
 
-      - name: Setup Python
+      - name: Set up Python
         uses: actions/setup-python@v4
         with:
           python-version: "3.x"
@@ -24,5 +21,5 @@ jobs:
       - name: Run script
         run: python script.py
         env:
-          FICHIER_API: ${{ secrets.FICHIER_API }}
-          ALD_TOKEN: ${{ secrets.ALD_TOKEN }}
+          ALLDEBRID_API_KEY: ${{ secrets.ALLDEBRID_API_KEY }}
+          FICHIER_API_KEY: ${{ secrets.FICHIER_API_KEY }}
