@@ -7,7 +7,7 @@ ALD_TOKEN = os.getenv("ALD_TOKEN")
 
 # 1fichier : dossier public
 DIR_URL = "https://1fichier.com/dir/GwAVeQxR"
-KEYWORD = "course"
+KEYWORD = "Course"
 
 session = requests.Session()
 session.headers.update({"User-Agent": "github-m3u-bot"})
@@ -27,7 +27,7 @@ for a in soup.find_all("a", href=True):
         file_links.append({"name": text, "url": href})
 
 if not file_links:
-    print("Aucun fichier trouvé avec le mot clé 'course'.")
+    print("Aucun fichier trouvé avec le mot clé 'Course'.")
     exit(0)
 
 print(f"{len(file_links)} fichiers trouvés correspondant au mot clé '{KEYWORD}'.")
@@ -60,15 +60,15 @@ m3u_text = "#EXTM3U\n"
 for entry in debrid_links:
     m3u_text += f"#EXTINF:-1,{entry['title']}\n{entry['url']}\n"
 
-with open("playlist_course.m3u", "w", encoding="utf-8") as f:
+with open("playlist_Course.m3u", "w", encoding="utf-8") as f:
     f.write(m3u_text)
 
-print(f"Playlist générée: playlist_course.m3u ({len(debrid_links)} entrées)")
+print(f"Playlist générée: playlist_Course.m3u ({len(debrid_links)} entrées)")
 
 # -------------------------
 # 4) Upload vers AllDebrid Saved Links
 # -------------------------
-files = {"files[]": ("playlist_course.m3u", open("playlist_course.m3u", "rb"), "text/plain")}
+files = {"files[]": ("playlist_Course.m3u", open("playlist_Course.m3u", "rb"), "text/plain")}
 upload = requests.post("https://api.alldebrid.com/v4/user/links/save", params={
     "agent": "github-m3u-bot",
     "apikey": ALD_TOKEN
