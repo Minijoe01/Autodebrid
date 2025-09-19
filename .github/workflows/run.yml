@@ -1,0 +1,27 @@
+name: AutoDebrid Playlist
+
+on:
+  schedule:
+    - cron: "0 */6 * * *"   # toutes les 6 heures
+  workflow_dispatch:         # exécutable manuellement aussi
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: pip install requests beautifulsoup4
+
+      - name: Run script
+        env:
+          ALD_TOKEN: ${{ secrets.ALD_TOKEN }}
+          FICHIER_API: ${{ secrets.FICHIER_API }}
+        run: python autodebrid.py
