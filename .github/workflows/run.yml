@@ -1,27 +1,28 @@
-name: AutoDebrid Playlist
+name: Auto M3U AllDebrid
 
 on:
   schedule:
-    - cron: "0 */6 * * *"   # toutes les 6 heures
-  workflow_dispatch:         # exécutable manuellement aussi
+    - cron: "0 6 * * *"   # Tous les jours à 6h du matin (UTC) → 8h en France
+  workflow_dispatch:       # Permet de lancer manuellement aussi
 
 jobs:
   build:
     runs-on: ubuntu-latest
+
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - name: Checkout repo
+        uses: actions/checkout@v3
 
       - name: Setup Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v4
         with:
-          python-version: "3.11"
+          python-version: "3.x"
 
       - name: Install dependencies
         run: pip install requests beautifulsoup4
 
       - name: Run script
+        run: python script.py
         env:
-          ALD_TOKEN: ${{ secrets.ALD_TOKEN }}
           FICHIER_API: ${{ secrets.FICHIER_API }}
-        run: python autodebrid.py
+          ALD_TOKEN: ${{ secrets.ALD_TOKEN }}
