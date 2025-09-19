@@ -2,77 +2,96 @@ import os
 import requests
 from bs4 import BeautifulSoup
 
-FICHIER_API = os.getenv("FICHIER_API")
-ALD_TOKEN = os.getenv("ALD_TOKEN")
+# ========================
+# CONFIGURATION
+# ========================
+FOLDER_URL = "https://1fichier.com/dir/GwAVeQxR"  # 🔹 Mets ici ton lien de dossier 1fichier
+KEYWORD = "Course"  # 🔹 Mot-clé à filtrer dans les noms de fichiers
 
-# 1fichier : dossier public
-DIR_URL = "https://1fichier.com/dir/GwAVeQxR"
-KEYWORD = "Course"
+ALLDEBRID_API_KEY = os.getenv("ALLDEBRID_API_KEY")  # Clé API AllDebrid (ajoutée dans GitHub Secrets)
+EMAIL_TO_NOTIFY = os.getenv("EMAIL_TO_NOTIFY", "")  # Optionnel : email pour notifier
+# ========================
 
-session = requests.Session()
-session.headers.update({"User-Agent": "github-m3u-bot"})
 
-# -------------------------
-# 1) Récupérer tous les liens fichiers
-# -------------------------
-resp = session.get(DIR_URL)
-resp.raise_for_status()
-soup = BeautifulSoup(resp.text, "html.parser")
+def get_links_from_folder(url, keyword):
+    """
+    Récupère les liens du dossier 1fichier
+    uniquement si le mot-clé est présent dans le NOM du fichier.
+    """
+    resp = requests.get(url)
+    resp.raise_for_status()
+    soup = BeautifulSoup(resp.text, "html.parser")
 
-file_links = []
-for a in soup.find_all("a", href=True):
-    href = a["href"]
-    text = a.get_text().strip()
-    if "/file/" in href.lower() and KEYWORD.lower() in text.lower():
-        file_links.append({"name": text, "url": href})
+    links = []
+    for a in soup.find_all("a", href=True):
+        href = a["href"]
 
-if not file_links:
-    print("Aucun fichier trouvé avec le mot clé 'Course'.")
-    exit(0)
+        if "/?" in href:  # lien fichier 1fichier
+            # Récupérer le vrai nom du fichier
+            filename = a.get("title") or a.text.strip()
 
-print(f"{len(file_links)} fichiers trouvés correspondant au mot clé '{KEYWORD}'.")
+            # Si vide, essayer de trouver dans un <span> voisin
+            if not filename:
+                span = a.find_next("span")
+                if span:
+                    filename = span.text.strip()
 
-# -------------------------
-# 2) Débrider chaque lien avec AllDebrid
-# -------------------------
-debrid_links = []
-for f in file_links:
-    link = f["url"]
-    title = f["name"]
-    r = requests.get("https://api.alldebrid.com/v4/link/unlock", params={
-        "agent": "github-m3u-bot",
-        "apikey": ALD_TOKEN,
-        "link": link
-    })
-    r.raise_for_status()
-    data = r.json()
-    if data["status"] == "success":
-        unlocked = data["data"].get("link") or data["data"].get("download")
-        debrid_links.append({"title": title, "url": unlocked})
-        print(f"Débridé: {title}")
+            # Vérifier si mot-clé dans le NOM du fichier
+            if filename and keyword.lower() in filename.lower():
+                links.append("https://1fichier.com" + href)
+
+    return links
+
+
+def debrid_link(link):
+    """
+    Utilise l’API AllDebrid pour transformer un lien 1fichier en lien direct.
+    """
+    url = "https://api.alldebrid.com/v4/link/unlock"
+    params = {"agent": "autodebrid", "apikey": ALLDEBRID_API_KEY, "link": link}
+    resp = requests.get(url, params=params)
+    data = resp.json()
+
+    if data.get("status") == "success":
+        return data["data"]["link"]
     else:
-        print(f"Erreur debrid: {link}, message: {data.get('error', {}).get('message')}")
+        print("Erreur debrid:", link)
+        return None
 
-# -------------------------
-# 3) Générer le fichier M3U
-# -------------------------
-m3u_text = "#EXTM3U\n"
-for entry in debrid_links:
-    m3u_text += f"#EXTINF:-1,{entry['title']}\n{entry['url']}\n"
 
-with open("playlist_Course.m3u", "w", encoding="utf-8") as f:
-    f.write(m3u_text)
+def main():
+    # Vérifier la clé API
+    if not ALLDEBRID_API_KEY:
+        print("Erreur: Clé API AllDebrid manquante (ALLDEBRID_API_KEY)")
+        return
 
-print(f"Playlist générée: playlist_Course.m3u ({len(debrid_links)} entrées)")
+    # Récupérer les liens filtrés
+    links = get_links_from_folder(FOLDER_URL, KEYWORD)
+    if not links:
+        print(f"Aucun fichier trouvé avec le mot clé '{KEYWORD}'.")
+        return
 
-# -------------------------
-# 4) Upload vers AllDebrid Saved Links
-# -------------------------
-files = {"files[]": ("playlist_Course.m3u", open("playlist_Course.m3u", "rb"), "text/plain")}
-upload = requests.post("https://api.alldebrid.com/v4/user/links/save", params={
-    "agent": "github-m3u-bot",
-    "apikey": ALD_TOKEN
-}, files=files)
+    print(f"{len(links)} fichiers trouvés avec le mot clé '{KEYWORD}'.")
 
-print("Upload AllDebrid:", upload.text)
+    # Débrider les liens
+    debrided_links = []
+    for link in links:
+        direct = debrid_link(link)
+        if direct:
+            debrided_links.append(direct)
 
+    if not debrided_links:
+        print("Aucun lien débridé.")
+        return
+
+    # Sauvegarder dans un fichier texte (ou playlist M3U)
+    with open("output.m3u", "w", encoding="utf-8") as f:
+        f.write("#EXTM3U\n")
+        for link in debrided_links:
+            f.write(f"#EXTINF:-1,{link}\n{link}\n")
+
+    print("✅ Playlist générée : output.m3u")
+
+
+if __name__ == "__main__":
+    main()
