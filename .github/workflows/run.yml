@@ -1,25 +1,38 @@
-name: AutoDebrid
+name: Auto M3U -> AllDebrid (daily)
 
 on:
-  workflow_dispatch:   # Lancement manuel depuis GitHub Actions
+  schedule:
+    - cron: '0 6 * * *'   # tous les jours à 6:00 UTC (08:00 France)
+  workflow_dispatch:     # permet lancement manuel
 
 jobs:
-  run:
+  build:
     runs-on: ubuntu-latest
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v3
 
-      - name: Set up Python
+    steps:
+      - name: Checkout repository (with write access)
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: true   # permet push via GITHUB_TOKEN
+
+      - name: Setup Python
         uses: actions/setup-python@v4
         with:
-          python-version: "3.x"
+          python-version: '3.11'
 
-      - name: Install dependencies
+      - name: Install deps
         run: pip install requests beautifulsoup4
 
-      - name: Run script
-        run: python script.py
+      - name: Run autodebrid script
         env:
           ALLDEBRID_API_KEY: ${{ secrets.ALLDEBRID_API_KEY }}
-          FICHIER_API_KEY: ${{ secrets.FICHIER_API_KEY }}
+          FICHIER_DIR_URL: ${{ secrets.FICHIER_DIR_URL }}
+          # GITHUB_REPOSITORY and GITHUB_REF are provided by Actions automatically
+        run: python script.py
+
+      - name: Upload generated m3u as artifact (backup)
+        uses: actions/upload-artifact@v4
+        with:
+          name: formule-2-m3u
+          path: formule\ 2.m3u
+
