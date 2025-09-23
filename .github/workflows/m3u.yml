@@ -1,38 +1,76 @@
-name: Build and publish M3U
+name: Génération M3U
 
 on:
   workflow_dispatch:
   schedule:
-    - cron: '0 7 * * *' # tous les jours à 07:00 UTC
+    - cron: '0 6 * * *' # tous les jours à 6h
 
 jobs:
   build:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v3
+    - name: Checkout main
+      uses: actions/checkout@v3
 
-      - name: Set up Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.13'
+    - name: Setup Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: 3.13
 
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install requests
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install requests
 
-      - name: Run script to generate M3U
-        run: python script.py
-        env:
-          CSV_URL: ${{ secrets.CSV_URL }}  # si tu veux rendre l'URL dynamique
-          ALLDEBRID_API_KEY: ${{ secrets.ALLDEBRID_API_KEY }}
-          FICHIER_API_KEY: ${{ secrets.FICHIER_API_KEY }}
+    - name: Générer le M3U
+      env:
+        CSV_URL: ${{ secrets.CSV_URL }}
+      run: |
+        python <<'EOF'
+import os, csv
 
-      - name: Publish to GitHub Pages
-        uses: peaceiris/actions-gh-pages@v4
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./  # ou le dossier où ton M3U est généré
-          publish_branch: gh-pages
+csv_url = os.environ.get("CSV_URL")
+import requests
+resp = requests.get(csv_url)
+resp.raise_for_status()
+
+lines = resp.text.splitlines()
+course_links = []
+
+for line in lines:
+    parts = line.split(';')
+    if len(parts) >= 2 and "Course" in parts[1]:
+        course_links.append((parts[1], parts[0]))
+
+# Tri par nom de fichier
+course_links.sort(key=lambda x: x[0])
+
+m3u_name = "formule2.m3u"
+with open(m3u_name, "w") as f:
+    f.write("#EXTM3U\n\n")
+    for title, link in course_links:
+        f.write(f"#EXTINF:-1,{title}\n{link}\n\n")
+
+print(f"✅ Fichier M3U généré: {m3u_name}")
+EOF
+
+    - name: Créer un ZIP du M3U
+      run: |
+        zip formule2-m3u.zip formule2.m3u
+
+    - name: Upload artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: formule2-m3u
+        path: formule2-m3u.zip
+
+    - name: Publier sur gh-pages
+      uses: peaceiris/actions-gh-pages@v6
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        publish_dir: .
+        publish_branch: gh-pages
+        commit_message: "Mise à jour M3U"
+        keep_files: true
+        force_orphan: false
