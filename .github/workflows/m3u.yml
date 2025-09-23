@@ -1,35 +1,40 @@
-name: Génération M3U
+name: Génération M3U et publication
 
 on:
-  workflow_dispatch:   # pour lancer manuellement
-  schedule:           # automatique tous les jours à 8h
-    - cron: '0 8 * * *'
+  workflow_dispatch: # permet de lancer manuellement
+  schedule:
+    - cron: '0 7 * * *' # tous les jours à 7h du matin (UTC)
 
 jobs:
-  build:
+  build_and_publish:
     runs-on: ubuntu-latest
-    env:
-      ALLDEBRID_API_KEY: ${{ secrets.ALLDEBRID_API_KEY }}
 
     steps:
-      - name: Checkout repo
-        uses: actions/checkout@v4
+    - name: Checkout du repo
+      uses: actions/checkout@v3
 
-      - name: Setup Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: 3.13
+    - name: Installer Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.13'
 
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install requests
+    - name: Installer dépendances
+      run: |
+        python -m pip install --upgrade pip
+        pip install requests
 
-      - name: Run script.py
-        run: python script.py
+    - name: Générer le M3U
+      env:
+        CSV_URL: ${{ secrets.CSV_URL }}
+      run: python script.py
 
-      - name: Upload M3U as artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: m3u-artifact
-          path: formule2-debride.m3u
+    - name: Installer GitHub Pages Action
+      uses: peaceiris/actions-gh-pages@v6
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        publish_branch: gh-pages
+        publish_dir: .
+        # ignore le reste sauf le M3U
+        # si tu veux, tu peux limiter à M3U seulement:
+        # force_orphan: true
+
