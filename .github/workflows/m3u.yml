@@ -28,7 +28,7 @@ jobs:
       run: python script.py
 
     - name: Deploy M3U to GitHub Pages
-      uses: peaceiris/actions-gh-pages@v6
+      uses: peaceiris/actions-gh-pages@v4
       with:
         github_token: ${{ secrets.GITHUB_TOKEN }}
         publish_dir: ./  # ou le dossier où script.py a créé formule2.m3u
