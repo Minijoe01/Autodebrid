@@ -2,7 +2,7 @@ import os
 import csv
 import requests
 
-# Récupération des clés API depuis les secrets GitHub
+# Clés API depuis GitHub Secrets
 ALLDEBRID_API_KEY = os.getenv("ALLDEBRID_API_KEY")
 FICHIER_API_KEY = os.getenv("FICHIER_API_KEY")
 
@@ -13,22 +13,25 @@ FICHIER_DIR_URL = "https://1fichier.com/dir/GwAVeQxR?e=1"
 OUTPUT_FILE = "formule2.m3u"
 
 def get_1fichier_links():
-    """Télécharge le CSV du dossier 1fichier et filtre les fichiers contenant 'Course'"""
+    """Télécharge le CSV du dossier 1fichier et filtre les fichiers contenant 'Course' (insensible à la casse)"""
+    print("Téléchargement du CSV...")
     resp = requests.get(FICHIER_DIR_URL)
     resp.raise_for_status()
 
     decoded = resp.content.decode("utf-8").splitlines()
-    reader = csv.DictReader(decoded, delimiter=";")
+    reader = csv.reader(decoded, delimiter=';')
 
     links = []
     for row in reader:
-        filename = row.get("Nom", "")
-        link = row.get("Lien", "")
-        if "Course" in filename and link:
-            links.append((filename, link))
+        if len(row) < 2:
+            continue
+        url, nom_fichier = row[0], row[1]
+        if "course" in nom_fichier.lower():  # insensible à la casse
+            links.append((nom_fichier, url))
 
     # Tri par nom de fichier
     links.sort(key=lambda x: x[0])
+    print(f"{len(links)} fichiers trouvés avec 'Course'.")
     return links
 
 def debrid_link(url):
@@ -48,10 +51,10 @@ def generate_m3u(links):
     """Crée un fichier M3U avec les liens débridés"""
     with open(OUTPUT_FILE, "w", encoding="utf-8") as f:
         f.write("#EXTM3U\n\n")
-        for filename, url in links:
+        for nom_fichier, url in links:
             debrid = debrid_link(url)
             if debrid:
-                f.write(f"#EXTINF:-1,{filename}\n{debrid}\n\n")
+                f.write(f"#EXTINF:-1,{nom_fichier}\n{debrid}\n\n")
     print(f"✅ Fichier M3U généré: {OUTPUT_FILE}")
 
 def main():
@@ -69,7 +72,7 @@ def main():
         print("Aucun fichier trouvé avec le mot clé: Course")
         return
 
-    print(f"2) {len(links)} fichiers trouvés. Débridage en cours...")
+    print("2) Débridage des fichiers et création du M3U...")
     generate_m3u(links)
 
 if __name__ == "__main__":
