@@ -1,55 +1,57 @@
-import requests
 import csv
+import requests
 import os
 
-ALLDEBRID_API_KEY = os.getenv("ALLDEBRID_API_KEY")  # doit être configuré dans GitHub Secrets
+# ==========================
+# CONFIGURATION
+# ==========================
+# CSV_URL doit être défini dans les secrets GitHub Actions
+CSV_URL = os.environ.get('CSV_URL')
+M3U_FILENAME = "formule2.m3u"
+KEYWORD = "Course"
 
-if not ALLDEBRID_API_KEY:
-    raise Exception("❌ Clé API AllDebrid manquante !")
+# ==========================
+# FONCTIONS
+# ==========================
+def fetch_csv(csv_url):
+    resp = requests.get(csv_url)
+    resp.raise_for_status()
+    content = resp.text
+    # Split by line and parse manually car CSV 1fichier est séparé par ";"
+    reader = csv.reader(content.splitlines(), delimiter=';')
+    return list(reader)
 
-# URL CSV de 1fichier
-CSV_URL = "https://1fichier.com/dir/GwAVeQxR?e=1"
+def filter_course_files(csv_data):
+    # csv_data format: [lien, nom_fichier, taille]
+    filtered = [row for row in csv_data if KEYWORD.lower() in row[1].lower()]
+    # Tri par nom de fichier
+    filtered.sort(key=lambda x: x[1])
+    return filtered
 
-print(f"CSV_URL utilisée : {CSV_URL}")
+def generate_m3u(filtered_list, filename):
+    with open(filename, 'w', encoding='utf-8') as f:
+        f.write("#EXTM3U\n\n")
+        for row in filtered_list:
+            url, name, _ = row
+            f.write(f"#EXTINF:-1,{name}\n{url}\n\n")
+    print(f"✅ Fichier M3U généré: {filename}")
 
-# Téléchargement CSV
-resp = requests.get(CSV_URL)
-resp.raise_for_status()
+# ==========================
+# SCRIPT PRINCIPAL
+# ==========================
+def main():
+    if not CSV_URL:
+        print("❌ CSV_URL non défini !")
+        return
+    print("1) Extraction fichiers 1fichier...")
+    csv_data = fetch_csv(CSV_URL)
+    filtered = filter_course_files(csv_data)
+    if not filtered:
+        print(f"Aucun fichier trouvé avec le mot clé: {KEYWORD}")
+        return
+    print(f"{len(filtered)} fichiers trouvés avec '{KEYWORD}'.")
+    print("2) Création du M3U...")
+    generate_m3u(filtered, M3U_FILENAME)
 
-lines = resp.text.splitlines()
-reader = csv.reader(lines, delimiter=';')
-
-# Filtrer les fichiers "Course"
-course_files = []
-for row in reader:
-    if len(row) < 2:
-        continue
-    url, filename = row[0], row[1]
-    if "Course" in filename:
-        course_files.append((filename, url))
-
-# Trier par nom de fichier
-course_files.sort(key=lambda x: x[0])
-
-# Débrider via AllDebrid et générer le M3U
-m3u_lines = ["#EXTM3U"]
-for filename, url in course_files:
-    r = requests.get(
-        f"https://api.alldebrid.com/v4/link/unlock",
-        params={"agent": "python_script", "apikey": ALLDEBRID_API_KEY, "link": url}
-    )
-    data = r.json()
-    if data.get("status") == "success":
-        debrid_url = data["data"]["link"]
-        m3u_lines.append(f"#EXTINF:-1,{filename}")
-        m3u_lines.append(debrid_url)
-        print(f"✅ Débridé: {filename}")
-    else:
-        print(f"❌ Erreur debrid: {url}")
-
-# Sauvegarder le M3U
-m3u_file = "formule2-debride.m3u"
-with open(m3u_file, "w") as f:
-    f.write("\n".join(m3u_lines))
-
-print(f"✅ Fichier M3U généré: {m3u_file}")
+if __name__ == "__main__":
+    main()
