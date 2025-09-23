@@ -1,36 +1,38 @@
-name: Build and deploy M3U
+name: Generate and Publish M3U
 
 on:
-  workflow_dispatch:
+  workflow_dispatch: # permet de lancer manuellement
   schedule:
-    - cron: '0 8 * * *' # Tous les jours à 08:00 UTC
+    - cron: '0 6 * * *' # tous les jours à 6h UTC
 
 jobs:
-  build-and-deploy:
+  build-and-publish:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v3
+    - name: Checkout main
+      uses: actions/checkout@v3
+      with:
+        fetch-depth: 0
 
-      - name: Set up Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.13'
+    - name: Setup Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: "3.13"
 
-      - name: Install dependencies
-        run: pip install requests
+    - name: Install dependencies
+      run: pip install requests
 
-      - name: Generate M3U
-        run: python script.py
-        env:
-          CSV_URL: ${{ secrets.CSV_URL }}  # URL CSV export 1fichier
-          
-      - name: Deploy M3U to GitHub Pages
-        uses: peaceiris/actions-gh-pages@v4
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./   # le dossier contenant formule2.m3u
-          publish_branch: gh-pages
-          keep_files: true
-          destination_dir: ''
+    - name: Generate M3U
+      env:
+        CSV_URL: ${{ secrets.FICHIER_CSV_URL }}
+        ALLDEBRID_API_KEY: ${{ secrets.ALLDEBRID_API_KEY }}
+      run: python Autodebrid/script.py
+
+    - name: Deploy to GitHub Pages
+      uses: peaceiris/actions-gh-pages@v4
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        publish_branch: gh-pages
+        publish_dir: Autodebrid/output
+        force_orphan: true
