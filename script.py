@@ -1,53 +1,55 @@
-import os
 import requests
+import csv
+import os
 
-# Variables
-ALLDEBRID_API_KEY = os.getenv("ALLDEBRID_API_KEY")
-CSV_URL = os.getenv("CSV_URL")  # définit dans le workflow YAML
-OUTPUT_M3U = "formule2-debride.m3u"
+ALLDEBRID_API_KEY = os.getenv("ALLDEBRID_API_KEY")  # doit être configuré dans GitHub Secrets
 
-print("1) Extraction fichiers 1fichier...")
+if not ALLDEBRID_API_KEY:
+    raise Exception("❌ Clé API AllDebrid manquante !")
 
-# 1. Récupération du CSV
+# URL CSV de 1fichier
+CSV_URL = "https://1fichier.com/dir/GwAVeQxR?e=1"
+
+print(f"CSV_URL utilisée : {CSV_URL}")
+
+# Téléchargement CSV
 resp = requests.get(CSV_URL)
-if resp.status_code != 200:
-    raise Exception(f"Erreur téléchargement CSV: {resp.status_code}")
+resp.raise_for_status()
 
 lines = resp.text.splitlines()
+reader = csv.reader(lines, delimiter=';')
 
-# 2. Filtrer les fichiers avec 'Course' dans le nom
+# Filtrer les fichiers "Course"
 course_files = []
-for line in lines:
-    parts = line.split(";")
-    if len(parts) < 2:
+for row in reader:
+    if len(row) < 2:
         continue
-    url, filename = parts[0], parts[1]
-    if "Course" in filename or "course" in filename:
+    url, filename = row[0], row[1]
+    if "Course" in filename:
         course_files.append((filename, url))
 
-if not course_files:
-    print("❌ Aucun fichier trouvé avec le mot clé 'Course'.")
-    exit(0)
+# Trier par nom de fichier
+course_files.sort(key=lambda x: x[0])
 
-print(f"{len(course_files)} fichiers trouvés avec 'Course'.")
-
-# 3. Débrider chaque lien via AllDebrid
-debrided_links = []
+# Débrider via AllDebrid et générer le M3U
+m3u_lines = ["#EXTM3U"]
 for filename, url in course_files:
     r = requests.get(
-        "https://api.alldebrid.com/v4/link/unlock",
-        params={"apikey": ALLDEBRID_API_KEY, "link": url}
+        f"https://api.alldebrid.com/v4/link/unlock",
+        params={"agent": "python_script", "apikey": ALLDEBRID_API_KEY, "link": url}
     )
     data = r.json()
     if data.get("status") == "success":
-        debrided_links.append((filename, data["data"]["download"]))
+        debrid_url = data["data"]["link"]
+        m3u_lines.append(f"#EXTINF:-1,{filename}")
+        m3u_lines.append(debrid_url)
+        print(f"✅ Débridé: {filename}")
     else:
-        print(f"❌ Erreur débridage: {url}")
+        print(f"❌ Erreur debrid: {url}")
 
-# 4. Créer le M3U
-with open(OUTPUT_M3U, "w", encoding="utf-8") as f:
-    f.write("#EXTM3U\n\n")
-    for filename, link in debrided_links:
-        f.write(f"#EXTINF:-1,{filename}\n{link}\n\n")
+# Sauvegarder le M3U
+m3u_file = "formule2-debride.m3u"
+with open(m3u_file, "w") as f:
+    f.write("\n".join(m3u_lines))
 
-print(f"✅ Fichier M3U généré: {OUTPUT_M3U}")
+print(f"✅ Fichier M3U généré: {m3u_file}")
