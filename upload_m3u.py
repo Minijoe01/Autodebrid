@@ -1,38 +1,36 @@
-name: Génération M3U F2
+name: Génération M3U
 
 on:
-  schedule:
-    # Tous les jours à 7h00 UTC
-    - cron: '0 7 * * *'
-  workflow_dispatch:  # Permet de lancer manuellement si besoin
+  workflow_dispatch:   # permet de lancer manuellement
+  schedule:           # exécuter tous les jours à 8h
+    - cron: '0 8 * * *'
 
 jobs:
-  generate-m3u:
+  build:
     runs-on: ubuntu-latest
-    steps:
-      # 1) Récupérer le code depuis le repo
-      - uses: actions/checkout@v3
+    env:
+      ALLDEBRID_API_KEY: ${{ secrets.ALLDEBRID_API_KEY }}
+      CSV_URL: "https://1fichier.com/dir/GwAVeQxR?e=1"  # URL du CSV
 
-      # 2) Installer Python
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
       - name: Setup Python
         uses: actions/setup-python@v4
         with:
-          python-version: '3.13'
+          python-version: 3.13
 
-      # 3) Installer les dépendances
-      - name: Install requests
-        run: pip install requests
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install requests
 
-      # 4) Générer le M3U
-      - name: Generate M3U
-        env:
-          ALLDEBRID_API_KEY: ${{ secrets.ALLDEBRID_API_KEY }}
-          CSV_URL: "https://1fichier.com/dir/GwAVeQxR?e=1"
+      - name: Run script.py
         run: python script.py
 
-      # 5) Upload M3U comme artefact
-      - name: Upload M3U Artifact
+      - name: Upload M3U as artifact
         uses: actions/upload-artifact@v4
         with:
-          name: M3U-F2
+          name: m3u-artifact
           path: formule2-debride.m3u
