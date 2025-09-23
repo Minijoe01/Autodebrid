@@ -30,9 +30,9 @@ jobs:
           ALLDEBRID_API_KEY: ${{ secrets.ALLDEBRID_API_KEY }}
           FICHIER_API_KEY: ${{ secrets.FICHIER_API_KEY }}
 
-- name: Publish to GitHub Pages
-  uses: peaceiris/actions-gh-pages@v4
-  with:
+       - name: Publish to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v4
+    with:
     github_token: ${{ secrets.GITHUB_TOKEN }}
     publish_dir: ./  # ou le dossier où ton M3U est généré
     publish_branch: gh-pages
