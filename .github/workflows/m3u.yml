@@ -27,7 +27,7 @@ jobs:
       env:
         CSV_URL: ${{ secrets.FICHIER_CSV_URL }}
         ALLDEBRID_API_KEY: ${{ secrets.ALLDEBRID_API_KEY }}
-      run: python Autodebrid/script.py
+      run: python script.py
 
     - name: Deploy to GitHub Pages
       uses: peaceiris/actions-gh-pages@v4
