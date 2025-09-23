@@ -1,0 +1,33 @@
+name: Génération M3U
+
+on:
+  schedule:
+    - cron: "0 6 * * *"   # Tous les jours à 06h du matin (UTC)
+  workflow_dispatch:       # Permet aussi de le lancer à la main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pip install requests
+
+      - name: Run script
+        env:
+          ALLDEBRID_API_KEY: ${{ secrets.ALLDEBRID_API_KEY }}
+          FICHIER_API_KEY: ${{ secrets.FICHIER_API_KEY }}
+        run: python script.py
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: formule2-m3u
+          path: formule2.m3u
