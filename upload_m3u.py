@@ -1,34 +1,38 @@
-import os
-import requests
+name: Génération M3U F2
 
-# Variables
-ALLDEBRID_API_KEY = os.getenv("ALLDEBRID_API_KEY")
-M3U_FILE = "formule2.m3u"         # fichier généré directement par script.py
-ALLDEBRID_FOLDER = "links"         # dossier AllDebrid pour sauvegarde
+on:
+  schedule:
+    # Tous les jours à 7h00 UTC
+    - cron: '0 7 * * *'
+  workflow_dispatch:  # Permet de lancer manuellement si besoin
 
-# Vérifie que la clé est présente
-if not ALLDEBRID_API_KEY:
-    raise ValueError("❌ Clé API AllDebrid manquante (ALLDEBRID_API_KEY)")
+jobs:
+  generate-m3u:
+    runs-on: ubuntu-latest
+    steps:
+      # 1) Récupérer le code depuis le repo
+      - uses: actions/checkout@v3
 
-# Vérifie que le fichier existe
-if not os.path.exists(M3U_FILE):
-    raise FileNotFoundError(f"❌ Fichier {M3U_FILE} introuvable")
+      # 2) Installer Python
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.13'
 
-# Upload vers AllDebrid
-url = "https://api.alldebrid.com/v4/file/upload"
+      # 3) Installer les dépendances
+      - name: Install requests
+        run: pip install requests
 
-with open(M3U_FILE, 'rb') as f:
-    files = {'file': f}
-    data = {
-        "apikey": ALLDEBRID_API_KEY,
-        "folder": ALLDEBRID_FOLDER,
-        "overwrite": "true"   # écrase le fichier si déjà présent
-    }
-    resp = requests.post(url, files=files, data=data)
-    resp_data = resp.json()
+      # 4) Générer le M3U
+      - name: Generate M3U
+        env:
+          ALLDEBRID_API_KEY: ${{ secrets.ALLDEBRID_API_KEY }}
+          CSV_URL: "https://1fichier.com/dir/GwAVeQxR?e=1"
+        run: python script.py
 
-if resp_data.get("status") == "success":
-    print(f"✅ M3U uploadé et sauvegardé dans AllDebrid: {resp_data['data']['link']}")
-    print(f"➡️ Tu peux utiliser ce lien dans Kodi: {resp_data['data']['link']}")
-else:
-    print(f"❌ Erreur upload AllDebrid: {resp_data}")
+      # 5) Upload M3U comme artefact
+      - name: Upload M3U Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: M3U-F2
+          path: formule2-debride.m3u
