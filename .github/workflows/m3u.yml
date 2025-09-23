@@ -1,32 +1,38 @@
-name: Générer et publier M3U
+name: Build and publish M3U
 
 on:
-  schedule:
-    - cron: '0 7 * * *'  # tourne tous les jours à 07:00
   workflow_dispatch:
+  schedule:
+    - cron: '0 7 * * *' # tous les jours à 07:00 UTC
 
 jobs:
   build:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repo
+      - name: Checkout repository
         uses: actions/checkout@v3
 
-      - name: Setup Python
+      - name: Set up Python
         uses: actions/setup-python@v4
         with:
           python-version: '3.13'
 
-      - name: Installer dépendances
-        run: pip install requests
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install requests
 
-      - name: Générer M3U
+      - name: Run script to generate M3U
         run: python script.py
+        env:
+          CSV_URL: ${{ secrets.CSV_URL }}  # si tu veux rendre l'URL dynamique
+          ALLDEBRID_API_KEY: ${{ secrets.ALLDEBRID_API_KEY }}
+          FICHIER_API_KEY: ${{ secrets.FICHIER_API_KEY }}
 
-      - name: Publier M3U sur GitHub Pages
-        uses: peaceiris/actions-gh-pages@v5
+      - name: Publish to GitHub Pages
+        uses: peaceiris/actions-gh-pages@main
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./  # ou le dossier où ton M3U est généré
           publish_branch: gh-pages
-          publish_dir: .
