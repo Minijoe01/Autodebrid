@@ -1,37 +1,36 @@
-name: Génération et déploiement M3U
+name: Build and deploy M3U
 
 on:
-  push:
-    branches:
-      - main
   workflow_dispatch:
+  schedule:
+    - cron: '0 8 * * *' # Tous les jours à 08:00 UTC
 
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout main
-      uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v3
 
-    - name: Set up Python
-      uses: actions/setup-python@v4
-      with:
-        python-version: 3.13
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.13'
 
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install requests
+      - name: Install dependencies
+        run: pip install requests
 
-    - name: Générer le M3U
-      run: python script.py
-
-    - name: Deploy M3U to GitHub Pages
-      uses: peaceiris/actions-gh-pages@v4
-      with:
-        github_token: ${{ secrets.GITHUB_TOKEN }}
-        publish_dir: ./  # ou le dossier où script.py a créé formule2.m3u
-        publish_branch: gh-pages
-        keep_files: true
-        destination_dir: /  # racine du site
+      - name: Generate M3U
+        run: python script.py
+        env:
+          CSV_URL: ${{ secrets.CSV_URL }}  # URL CSV export 1fichier
+          
+      - name: Deploy M3U to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./   # le dossier contenant formule2.m3u
+          publish_branch: gh-pages
+          keep_files: true
+          destination_dir: ''
