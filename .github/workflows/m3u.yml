@@ -28,15 +28,14 @@ jobs:
           python -m pip install --upgrade pip
           pip install requests
 
-      - name: Check Autodebrid folder contents
-        run: ls -R Autodebrid
+      - name: Check repo contents
+        run: ls -R
 
       - name: Run script.py
         run: python script.py
-        working-directory: Autodebrid
 
       - name: Upload M3U as artifact
         uses: actions/upload-artifact@v4
         with:
           name: m3u-artifact
-          path: Autodebrid/formule2-debride.m3u
+          path: formule2-debride.m3u
