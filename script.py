@@ -27,13 +27,9 @@ def filter_course_files(csv_data):
 
 def debrid_link(url):
     if not ALLDEBRID_API_KEY:
-        print("⚠️ Clé AllDebrid non définie, retourne le lien brut")
         return url
     api_url = "https://api.alldebrid.com/v4/link/unlock"
-    params = {
-        "apikey": ALLDEBRID_API_KEY,
-        "link": url
-    }
+    params = {"apikey": ALLDEBRID_API_KEY, "link": url}
     try:
         r = requests.get(api_url, params=params)
         r.raise_for_status()
@@ -41,10 +37,8 @@ def debrid_link(url):
         if "data" in data and "link" in data["data"]:
             return data["data"]["link"]
         else:
-            print(f"⚠️ Erreur API AllDebrid pour {url}, retourne le lien brut")
             return url
-    except Exception as e:
-        print(f"⚠️ Exception lors du débridage: {e}, retourne le lien brut")
+    except:
         return url
 
 def generate_m3u(filtered_list, filename):
@@ -63,14 +57,11 @@ def main():
     if not CSV_URL:
         print("❌ CSV_URL non défini !")
         return
-    print("1) Extraction fichiers 1fichier...")
     csv_data = fetch_csv(CSV_URL)
     filtered = filter_course_files(csv_data)
     if not filtered:
-        print(f"Aucun fichier trouvé avec le mot clé: {KEYWORD}")
+        print(f"Aucun fichier trouvé avec '{KEYWORD}'")
         return
-    print(f"{len(filtered)} fichiers trouvés avec '{KEYWORD}'.")
-    print("2) Débridage et création du M3U...")
     generate_m3u(filtered, M3U_FILENAME)
 
 if __name__ == "__main__":
