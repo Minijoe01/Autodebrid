@@ -9,7 +9,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
     env:
-      CSV_URL: ${{ secrets.CSV_URL }}  # URL du CSV dans les secrets
+      CSV_URL: ${{ secrets.CSV_URL }}            # URL du CSV dans les secrets
       ALLDEBRID_API_KEY: ${{ secrets.ALLDEBRID_API_KEY }}
       M3U_FILENAME: "formule2-debride.m3u"
       KEYWORD: "Course"
