@@ -29,20 +29,20 @@ jobs:
           pip install requests
 
       - name: Run script.py
-        run: python Autodebrid/script.py
-        working-directory: ./  # <-- exécute depuis la racine du repo
+        run: python script.py
+        working-directory: ./Autodebrid
 
       - name: Upload M3U as artifact
         uses: actions/upload-artifact@v4
         with:
           name: m3u-artifact
-          path: ./formule2-debride.m3u
+          path: Autodebrid/formule2-debride.m3u
 
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v4
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./      # <-- la racine contient le fichier
+          publish_dir: Autodebrid
           keep_files: true
           user_name: github-actions[bot]
           user_email: github-actions[bot]@users.noreply.github.com
