@@ -26,7 +26,8 @@ jobs:
           pip install requests
 
       - name: Run script.py
-        run: python Autodebrid/script.py
+        run: python script.py
+        working-directory: Autodebrid
 
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v4
