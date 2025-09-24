@@ -1,18 +1,16 @@
-name: Génération et déploiement M3U
+name: Génération et publication du M3U
 
 on:
-  workflow_dispatch:   # Permet de lancer manuellement
-  schedule:           # Exécution automatique tous les jours à 08h
+  workflow_dispatch:
+  schedule:
     - cron: '0 8 * * *'
 
 jobs:
-  build-and-deploy:
+  build-and-publish:
     runs-on: ubuntu-latest
     env:
       CSV_URL: ${{ secrets.CSV_URL }}
       ALLDEBRID_API_KEY: ${{ secrets.ALLDEBRID_API_KEY }}
-      M3U_FILENAME: "formule2-debride.m3u"
-      KEYWORD: "Course"
 
     steps:
       - name: Checkout repo
@@ -28,10 +26,7 @@ jobs:
           python -m pip install --upgrade pip
           pip install requests
 
-      - name: Vérification des fichiers
-        run: ls -R Autodebrid
-
-      - name: Génération du M3U
+      - name: Run script.py
         run: python Autodebrid/script.py
 
       - name: Upload M3U as artifact
@@ -45,5 +40,7 @@ jobs:
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: Autodebrid
-          publish_branch: gh-pages
           keep_files: true
+          destination_dir: .
+          user_name: github-actions[bot]
+          user_email: github-actions[bot]@users.noreply.github.com
