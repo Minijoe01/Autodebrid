@@ -7,8 +7,8 @@ import os
 # ==========================
 CSV_URL = os.environ.get('CSV_URL')
 ALLDEBRID_API_KEY = os.environ.get('ALLDEBRID_API_KEY')
-M3U_FILENAME = "formule2-debride.m3u"
-KEYWORD = "Course"
+M3U_FILENAME = os.environ.get('M3U_FILENAME', 'formule2-debride.m3u')
+KEYWORD = os.environ.get('KEYWORD', 'Course')
 
 # ==========================
 # FONCTIONS
@@ -26,18 +26,26 @@ def filter_course_files(csv_data):
     return filtered
 
 def debrid_link(url):
+    if not ALLDEBRID_API_KEY:
+        print("⚠️ Clé AllDebrid non définie, retourne le lien brut")
+        return url
     api_url = "https://api.alldebrid.com/v4/link/unlock"
     params = {
-        "agent": "script",
         "apikey": ALLDEBRID_API_KEY,
         "link": url
     }
-    resp = requests.get(api_url, params=params).json()
-    if resp.get("status") == "success":
-        return resp["data"]["link"]["link"]
-    else:
-        print(f"❌ Erreur débridage pour {url}: {resp}")
-        return url  # fallback
+    try:
+        r = requests.get(api_url, params=params)
+        r.raise_for_status()
+        data = r.json()
+        if "data" in data and "link" in data["data"]:
+            return data["data"]["link"]
+        else:
+            print(f"⚠️ Erreur API AllDebrid pour {url}, retourne le lien brut")
+            return url
+    except Exception as e:
+        print(f"⚠️ Exception lors du débridage: {e}, retourne le lien brut")
+        return url
 
 def generate_m3u(filtered_list, filename):
     with open(filename, 'w', encoding='utf-8') as f:
@@ -52,8 +60,8 @@ def generate_m3u(filtered_list, filename):
 # SCRIPT PRINCIPAL
 # ==========================
 def main():
-    if not CSV_URL or not ALLDEBRID_API_KEY:
-        print("❌ CSV_URL ou ALLDEBRID_API_KEY non défini !")
+    if not CSV_URL:
+        print("❌ CSV_URL non défini !")
         return
     print("1) Extraction fichiers 1fichier...")
     csv_data = fetch_csv(CSV_URL)
