@@ -28,6 +28,9 @@ jobs:
           python -m pip install --upgrade pip
           pip install requests
 
+      - name: Check Autodebrid folder contents
+        run: ls -R Autodebrid
+
       - name: Run script.py
         run: python script.py
         working-directory: Autodebrid
