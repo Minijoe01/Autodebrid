@@ -1,15 +1,15 @@
 name: Génération M3U
 
 on:
-  workflow_dispatch:   # permet de lancer manuellement
-  schedule:           # exécuter tous les jours à 8h
+  workflow_dispatch:
+  schedule:
     - cron: '0 8 * * *'
 
 jobs:
   build:
     runs-on: ubuntu-latest
     env:
-      CSV_URL: ${{ secrets.CSV_URL }}            # URL du CSV dans les secrets
+      CSV_URL: ${{ secrets.CSV_URL }}
       ALLDEBRID_API_KEY: ${{ secrets.ALLDEBRID_API_KEY }}
       M3U_FILENAME: "formule2-debride.m3u"
       KEYWORD: "Course"
@@ -29,7 +29,7 @@ jobs:
           pip install requests
 
       - name: Run script.py
-        run: python Autodebrid/script.py
+        run: python Autodebrid/script.py   # <-- chemin exact
 
       - name: Upload M3U as artifact
         uses: actions/upload-artifact@v4
