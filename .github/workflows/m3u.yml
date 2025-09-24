@@ -1,8 +1,8 @@
 name: Génération et publication du M3U
 
 on:
-  workflow_dispatch:   # Permet de lancer manuellement
-  schedule:            # Exécuter tous les jours à 8h
+  workflow_dispatch:
+  schedule:
     - cron: '0 8 * * *'
 
 jobs:
@@ -27,24 +27,23 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install requests
+        working-directory: Autodebrid
 
       - name: Run script.py
-        working-directory: Autodebrid
         run: python ./script.py
+        working-directory: Autodebrid
 
       - name: Upload M3U as artifact
-        working-directory: Autodebrid
         uses: actions/upload-artifact@v4
         with:
           name: m3u-artifact
-          path: ./formule2-debride.m3u
+          path: Autodebrid/formule2-debride.m3u
 
       - name: Deploy to GitHub Pages
-        working-directory: Autodebrid
         uses: peaceiris/actions-gh-pages@v4
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: .
+          publish_dir: Autodebrid
           keep_files: true
           user_name: github-actions[bot]
           user_email: github-actions[bot]@users.noreply.github.com
