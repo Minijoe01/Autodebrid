@@ -1,48 +1,41 @@
-name: Génération et publication du M3U
+name: Debrid M3U
 
 on:
-  workflow_dispatch:   # Permet de lancer manuellement
-  schedule:            # Exécuter tous les jours à 8h
-    - cron: '0 8 * * *'
+  workflow_dispatch:
 
 jobs:
-  build-and-publish:
+  build:
     runs-on: ubuntu-latest
-    env:
-      CSV_URL: ${{ secrets.CSV_URL }}
-      ALLDEBRID_API_KEY: ${{ secrets.ALLDEBRID_API_KEY }}
-      M3U_FILENAME: "formule2-debride.m3u"
-      KEYWORD: "Course"
 
     steps:
       - name: Checkout repo
-        uses: actions/checkout@v4
+        uses: actions/checkout@v3
 
-      - name: Setup Python
+      - name: Debug repo structure
+        run: |
+          pwd
+          ls -R
+
+      - name: Set up Python
         uses: actions/setup-python@v4
         with:
-          python-version: 3.13
+          python-version: '3.x'
 
       - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install requests
+        run: pip install requests
 
       - name: Run script.py
-        run: python Autodebrid/script.py
+        run: python script.py
+        working-directory: Autodebrid
 
-      - name: Upload M3U as artifact
-        uses: actions/upload-artifact@v4
+      - name: Upload artifact
+        uses: actions/upload-artifact@v3
         with:
-          name: m3u-artifact
+          name: m3u-output
           path: Autodebrid/formule2-debride.m3u
 
       - name: Deploy to GitHub Pages
-        uses: peaceiris/actions-gh-pages@v4
+        uses: peaceiris/actions-gh-pages@v3
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: Autodebrid
-          keep_files: true
-          destination_dir: .
-          user_name: github-actions[bot]
-          user_email: github-actions[bot]@users.noreply.github.com
