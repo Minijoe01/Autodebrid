@@ -11,7 +11,7 @@ jobs:
     env:
       CSV_URL: ${{ secrets.CSV_URL }}
       ALLDEBRID_API_KEY: ${{ secrets.ALLDEBRID_API_KEY }}
-      M3U_FILENAME: "Autodebrid/formule2-debride.m3u"
+      M3U_FILENAME: "formule2-debride.m3u"
       KEYWORD: "Course"
 
     steps:
@@ -43,6 +43,5 @@ jobs:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: Autodebrid
           keep_files: true
-          destination_dir: .
           user_name: github-actions[bot]
           user_email: github-actions[bot]@users.noreply.github.com
