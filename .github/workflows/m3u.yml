@@ -6,12 +6,12 @@ on:
     - cron: '0 8 * * *'
 
 jobs:
-  build-and-publish:
+  build:
     runs-on: ubuntu-latest
     env:
-      CSV_URL: ${{ secrets.CSV_URL }}            # URL du CSV
+      CSV_URL: ${{ secrets.CSV_URL }}            # URL du CSV dans les secrets
       ALLDEBRID_API_KEY: ${{ secrets.ALLDEBRID_API_KEY }}
-      M3U_FILENAME: "formule2.m3u"
+      M3U_FILENAME: "formule2-debride.m3u"
       KEYWORD: "Course"
 
     steps:
@@ -29,17 +29,10 @@ jobs:
           pip install requests
 
       - name: Run script.py
-        run: python script.py
-        working-directory: Autodebrid
+        run: python Autodebrid/script.py
 
       - name: Upload M3U as artifact
         uses: actions/upload-artifact@v4
         with:
           name: m3u-artifact
-          path: Autodebrid/formule2.m3u
-
-      - name: Deploy M3U to GitHub Pages
-        uses: peaceiris/actions-gh-pages@v4
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: Autodebrid
+          path: Autodebrid/formule2-debride.m3u
