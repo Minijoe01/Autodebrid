@@ -1,8 +1,8 @@
 name: Génération et publication du M3U
 
 on:
-  workflow_dispatch:   # Permet de lancer manuellement
-  schedule:            # Exécuter tous les jours à 8h
+  workflow_dispatch:
+  schedule:
     - cron: '0 8 * * *'
 
 jobs:
@@ -29,8 +29,7 @@ jobs:
           pip install requests
 
       - name: Run script.py
-        run: python script.py
-        working-directory: ./Autodebrid
+        run: python Autodebrid/script.py
 
       - name: Upload M3U as artifact
         uses: actions/upload-artifact@v4
