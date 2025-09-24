@@ -29,8 +29,7 @@ jobs:
           pip install requests
 
       - name: Run script.py
-        run: python script.py
-        working-directory: Autodebrid
+        run: python Autodebrid/script.py
 
       - name: Upload M3U as artifact
         uses: actions/upload-artifact@v4
