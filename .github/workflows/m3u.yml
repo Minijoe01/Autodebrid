@@ -1,12 +1,12 @@
-name: Génération M3U
+name: Génération et publication M3U
 
 on:
-  workflow_dispatch:   # permet de lancer manuellement
+  workflow_dispatch:   # lancer manuellement
   schedule:           # exécuter tous les jours à 8h
     - cron: '0 8 * * *'
 
 jobs:
-  build:
+  build-and-deploy:
     runs-on: ubuntu-latest
     env:
       CSV_URL: ${{ secrets.CSV_URL }}  # URL du CSV dans les secrets
@@ -28,14 +28,18 @@ jobs:
           python -m pip install --upgrade pip
           pip install requests
 
-      - name: Check repo contents
-        run: ls -R
-
-      - name: Run script.py
+      - name: Run script.py to generate debrid M3U
         run: python script.py
+        working-directory: Autodebrid
 
       - name: Upload M3U as artifact
         uses: actions/upload-artifact@v4
         with:
           name: m3u-artifact
-          path: formule2-debride.m3u
+          path: Autodebrid/formule2-debride.m3u
+
+      - name: Deploy M3U to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: Autodebrid
